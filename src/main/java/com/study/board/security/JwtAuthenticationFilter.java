@@ -38,19 +38,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = parseJwt(request);
 
         if (token == null) {
-            System.out.println("🚨 JWT 토큰이 요청에 포함되지 않음");
             chain.doFilter(request, response);
             return;
         }
 
         if (!jwtUtil.validateToken(token)) {
-            System.out.println("🚨 JWT 토큰 검증 실패");
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "JWT 검증 실패");
             return;
         }
 
         String email = jwtUtil.extractEmail(token);
-        System.out.println("✅ JwtAuthenticationFilter - 추출된 이메일: " + email);
 
         if (email != null) {
             UserDetails userDetails = new User(email, "", Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
@@ -61,7 +58,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         chain.doFilter(request, response);
 
-        System.out.println("SecurityContext Authentication: " + SecurityContextHolder.getContext().getAuthentication());
 
     }
 

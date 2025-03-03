@@ -1,6 +1,7 @@
 package com.study.board.controller;
 
 import com.study.board.dto.request.ReqBoardDto;
+import com.study.board.dto.request.ReqBoardUpdateDto;
 import com.study.board.dto.response.ResBoardDto;
 import com.study.board.dto.response.ResBoardListDto;
 import com.study.board.dto.response.ResDetailDto;
@@ -49,7 +50,6 @@ public class BoardController {
             @RequestPart(value = "files", required = false) List<MultipartFile> files, // ✅ 파일 리스트
             @RequestHeader(value = "Authorization", required = false) String authHeader) throws IOException {
 
-        System.out.println("Received JWT Token: " + authHeader);
 
         // ✅ JWT 토큰이 존재하는지 검증
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -59,7 +59,6 @@ public class BoardController {
         // ✅ 토큰에서 이메일 추출
         String token = authHeader.replace("Bearer ", "");
         String userEmail = jwtUtil.extractEmail(token);
-        System.out.println("Extracted User Email: " + userEmail);
 
         if (userEmail == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("토큰 검증 실패.");
@@ -67,7 +66,6 @@ public class BoardController {
 
         // ✅ 요청 본문에서 writerEmail 가져오기
         String writerEmail = reqBoardDto.getWriterEmail();
-        System.out.println("Request Body Writer Email: " + writerEmail);
 
         // ✅ JWT에서 추출한 이메일과 요청된 writerEmail이 다르면 오류 반환
         if (!userEmail.equals(writerEmail)) {
@@ -77,7 +75,6 @@ public class BoardController {
         // ✅ 게시글 + 파일을 함께 저장
         ResBoardDto boardDto = boardService.createBoardWithFiles(reqBoardDto, userEmail, files);
 
-        System.out.println("📌 생성된 boardDto의 boardId: " + boardDto.getId());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(boardDto);
     }
@@ -95,6 +92,73 @@ public class BoardController {
         boardService.increaseLike(boardId);
         return ResponseEntity.ok().build();
     }
+
+    @PutMapping("/{boardId}/update")
+    public ResponseEntity<?> updateBoard(
+            @PathVariable Long boardId,
+            @RequestPart("board") ReqBoardUpdateDto requestDto,  // ✅ JSON 데이터 받음
+            @RequestPart(value = "files", required = false) List<MultipartFile> files, // ✅ 파일 추가 가능
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        // ✅ 1. JWT 검증
+        String token = authHeader.replace("Bearer ", "");
+        String userEmail = jwtUtil.extractEmail(token);
+
+        // ✅ 2. 게시글 존재 여부 확인
+        Board board = boardService.getBoardEntityById(boardId);
+        if (!board.getWriter().equals(userEmail)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("게시글 수정 권한이 없습니다.");
+        }
+
+        // ✅ 3. 게시글 내용 + 파일 수정
+        boardService.updateBoardWithFiles(board, requestDto, files);
+
+        return ResponseEntity.ok("게시글이 수정되었습니다.");
+    }
+
+    @DeleteMapping("/{boardId}/delete")
+    public ResponseEntity<?> deleteBoard(
+            @PathVariable Long boardId,
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        // ✅ 1. JWT 검증
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않은 토큰입니다.");
+        }
+        String token = authHeader.replace("Bearer ", "");
+        String userEmail = jwtUtil.extractEmail(token);
+
+        // ✅ 2. 게시글 존재 여부 확인
+        Board board = boardService.getBoardEntityById(boardId);
+        if (board == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("게시글을 찾을 수 없습니다.");
+        }
+
+        // ✅ 3. 삭제 권한 확인 (작성자만 삭제 가능)
+        if (!board.getWriter().equals(userEmail)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("게시글 삭제 권한이 없습니다.");
+        }
+
+        // ✅ 4. 게시글 삭제 (서비스 호출)
+        boardService.deleteBoard(boardId);
+
+        return ResponseEntity.ok("게시글이 삭제되었습니다.");
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<Page<ResBoardListDto>> searchBoards(
+            @RequestParam(value = "title", required = false) String title,
+            @RequestParam(value = "content", required = false) String content,
+            @RequestParam(value = "writerName", required = false) String writerName,
+            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        Page<ResBoardListDto> searchResults = boardService.searchBoards(title, content, writerName, pageable);
+        return ResponseEntity.ok(searchResults);
+    }
+
+
+
+
 
 }
 

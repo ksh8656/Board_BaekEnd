@@ -30,5 +30,9 @@ public class Comment {
     private String content;
 
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    public void updateContent(String newContent) {
+        this.content = newContent;
+    }
 }
 

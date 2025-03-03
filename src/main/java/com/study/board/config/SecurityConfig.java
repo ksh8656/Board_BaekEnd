@@ -55,7 +55,7 @@ public class SecurityConfig {
 
         config.setAllowCredentials(true); // ✅ 인증 정보 포함 허용
         config.setAllowedOrigins(Arrays.asList("http://localhost:3000")); // ✅ 프론트엔드 허용
-        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS")); // ✅ 모든 HTTP 메서드 허용
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")); // ✅ 모든 HTTP 메서드 허용
         config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type")); // ✅ 헤더 허용
 
         source.registerCorsConfiguration("/**", config);

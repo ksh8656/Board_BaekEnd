@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface BoardRepository extends JpaRepository<Board, Long> {
+public interface BoardRepository extends JpaRepository<Board, Long>, BoardRepositoryCustom {
 
     @Query("SELECT b, u.rank FROM Board b JOIN User u ON b.writer = u.email")
     Page<Object[]> findAllWithRank(Pageable pageable);

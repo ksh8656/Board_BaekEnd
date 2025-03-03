@@ -9,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;
 import java.security.Principal;
-import java.util.Map;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,16 +25,14 @@ public class CommentController {
     @PreAuthorize("isAuthenticated()") // ✅ 로그인한 사용자만 댓글 작성 가능
     public ResponseEntity<ResCommentDto> createComment(
             @PathVariable Long boardId,
-            @RequestBody ReqCommentDto reqCommentDto, // ✅ 프론트에서 보낸 요청 데이터 받기
+            @RequestBody ReqCommentDto reqCommentDto,
             Principal principal) {
 
         String userEmail = principal.getName(); // ✅ 현재 로그인한 사용자 이메일 가져오기
-
         Comment savedComment = commentService.saveComment(boardId, userEmail, reqCommentDto.getContent());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(new ResCommentDto(savedComment));
     }
-
 
     // ✅ 댓글 목록 조회 (로그인한 사용자만 가능)
     @GetMapping("/list")
@@ -49,6 +46,33 @@ public class CommentController {
         return ResponseEntity.ok(commentPage);
     }
 
+    // ✅ 댓글 수정 (로그인한 사용자만 가능, 본인 댓글만 수정 가능)
+    @PatchMapping("/{commentId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<String> updateComment(
+            @PathVariable Long boardId,
+            @PathVariable Long commentId,
+            @RequestBody ReqCommentDto reqDto,
+            Principal principal) {
+
+        String userEmail = principal.getName();
+        commentService.updateComment(commentId, reqDto.getContent(), userEmail);
+        return ResponseEntity.ok("댓글이 수정되었습니다!");
+    }
+
+    // ✅ 댓글 삭제 (로그인한 사용자만 가능, 본인 댓글만 삭제 가능)
+    @DeleteMapping("/{commentId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<String> deleteComment(
+            @PathVariable Long boardId,
+            @PathVariable Long commentId,
+            Principal principal) {
+
+        String userEmail = principal.getName();
+        commentService.deleteComment(commentId, userEmail);
+        return ResponseEntity.ok("댓글이 삭제되었습니다!");
+    }
 }
+
 
 

@@ -29,17 +29,14 @@ public class JwtUtil {
 
     public boolean validateToken(String token) {
         try {
-            System.out.println("📢 validateToken() 실행됨. 토큰: " + token);
 
             Jwts.parser()
                     .verifyWith(key) // ✅ 최신 방식 사용
                     .build()
                     .parseSignedClaims(token);
 
-            System.out.println("✅ JWT 검증 성공");
             return true;
         } catch (Exception e) {
-            System.out.println("🚨 JWT 검증 실패: " + e.getMessage()); // ✅ JWT 검증 실패 로그 추가
             return false;
         }
     }
@@ -48,10 +45,8 @@ public class JwtUtil {
     public String extractEmail(String token) {
         try {
             Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
-            System.out.println("JwtUtil - 토큰에서 추출된 이메일: " + claims.getSubject()); // ✅ 로그 확인
             return claims.getSubject();
         } catch (Exception e) {
-            System.out.println("JwtUtil - 토큰 검증 실패: " + e.getMessage());
             return null; // 토큰이 유효하지 않으면 null 반환
         }
     }
